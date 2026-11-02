@@ -1,0 +1,51 @@
+# ── Environment / secrets ───────────────────────────────
+.env
+
+# ── Logs (all channels) ─────────────────────────────────
+system_log.txt*
+success_log.txt*
+etsy_system_log.txt*
+etsy_success_log.txt*
+shopify_system_log.txt*
+shopify_success_log.txt*
+app_gui.log
+shopify_gui.log
+last_backup.txt
+last_cleanup_month.txt
+log_archives/
+
+# ── Runtime state JSONs ─────────────────────────────────
+status.json
+processed_orders.json
+retry_queue.json
+etsy_processed_puz.json
+etsy_processed_puzzlemaster.json
+etsy_status_puz.json
+etsy_status_puzzlemaster.json
+shopify_processed_ornamentopia.json
+shopify_status_ornamentopia.json
+tabs_probe.json
+
+# ── Backups ─────────────────────────────────────────────
+processed_orders_backup_*.json
+*.bak
+
+# ── Build / packaging artifacts ─────────────────────────
+build/
+dist/
+__pycache__/
+*.spec.bak
+
+# ── Compiled executables ────────────────────────────────
+*.exe
+
+# ── Chrome Profile Data ─────────────────────────────────
+ChromeDebugProfile/
+
+# ── Windows redirect artifact ───────────────────────────
+nul
+
+# ── Debug captures ──────────────────────────────────────
+debug_*.png
+# ── Local agent/tooling config ──────────────────────────
+.claude/

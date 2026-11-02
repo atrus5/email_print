@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PuzzleMaster — Order Automation Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Arial+Narrow&family=Oswald:wght@600;700&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --teal:       #2a7ea6;
+    --teal-dark:  #1a5f80;
+    --teal-light: #e8f4fa;
+    --yellow:     #ffc71e;
+    --yellow-dark:#e6b000;
+    --red:        #cc0000;
+    --green:      #2e7d32;
+    --green-bg:   #e8f5e9;
+    --red-bg:     #ffebee;
+    --amber:      #e65100;
+    --amber-bg:   #fff3e0;
+    --text:       #222222;
+    --text-dim:   #555555;
+    --muted:      #888888;
+    --border:     #cccccc;
+    --border-lt:  #e0e0e0;
+    --bg:         #f0f0f0;
+    --surface:    #ffffff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Open Sans', Arial, sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  /* ── RAINBOW STRIP ── */
+  .rainbow {
+    height: 6px;
+    background: linear-gradient(to right,
+      #e74c3c, #e67e22, #f1c40f, #2ecc71,
+      #1abc9c, #3498db, #9b59b6, #e91e8c,
+      #e74c3c);
+  }
+
+  /* ── TOP NAV ── */
+  .topnav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0.6rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .nav-title {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--teal);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .nav-right { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; }
+
+  /* ── BLUE CATEGORY BAR ── */
+  .catbar {
+    background: var(--teal);
+    padding: 0.55rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .catbar-label {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 700;
+    font-size: 0.78rem;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.8rem;
+    border-radius: 2px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border: 1.5px solid rgba(255,255,255,0.4);
+    color: #fff;
+    background: rgba(255,255,255,0.12);
+  }
+
+  .status-pill.ok    { border-color: #80ffbb; color: #80ffbb; }
+  .status-pill.error { border-color: #ffaaaa; color: #ffaaaa; }
+
+  .pulse { width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: pulse 2s infinite; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.35; transform: scale(0.75); }
+  }
+
+  /* ── REFRESH BUTTON — yellow/orange like ADD button ── */
+  .refresh-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--yellow);
+    border: 1px solid var(--yellow-dark);
+    color: #222;
+    font-family: 'Open Sans', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 0.45rem 1.1rem;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+  }
+
+  .refresh-btn:hover  { background: var(--yellow-dark); }
+  .refresh-btn:active { transform: scale(0.97); }
+  .refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .refresh-btn.spinning .icon { display: inline-block; animation: spin 0.6s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── MAIN LAYOUT ── */
+  .layout { display: flex; gap: 0; max-width: 1100px; margin: 1.5rem auto; padding: 0 1.5rem; align-items: flex-start; }
+
+  /* ── SIDEBAR ── */
+  .sidebar { width: 220px; flex-shrink: 0; margin-right: 1.5rem; }
+
+  .sidebar-title {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 700;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text);
+    border-bottom: 2px solid var(--teal);
+    padding-bottom: 0.4rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .sidebar-item {
+    display: block;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+    color: var(--teal);
+    border-bottom: 1px solid var(--border-lt);
+    text-decoration: none;
+    transition: background 0.1s;
+    cursor: default;
+  }
+
+  .sidebar-item:hover { background: var(--teal-light); }
+  .sidebar-item.active { background: var(--teal); color: #fff; font-weight: 700; }
+
+  .sidebar-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    margin-bottom: 1rem;
+    overflow: hidden;
+  }
+
+  /* ── STAT CARDS ── */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    padding: 1.2rem 1.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .stat-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  .stat-value {
+    font-family: 'Oswald', sans-serif;
+    font-size: 2.4rem;
+    font-weight: 700;
+    color: var(--teal);
+    line-height: 1;
+  }
+
+  .stat-sub { font-size: 0.68rem; color: var(--muted); }
+
+  /* ── SECTION TITLE ── */
+  .section-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text);
+    border-bottom: 2px solid var(--teal);
+    padding-bottom: 0.4rem;
+    margin-bottom: 0.6rem;
+  }
+
+  /* ── ORDER TABLE ── */
+  .order-table {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .order-table thead tr {
+    background: var(--teal);
+    color: #fff;
+  }
+
+  .order-table thead th {
+    padding: 0.55rem 1rem;
+    text-align: left;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .order-table tbody tr {
+    border-bottom: 1px solid var(--border-lt);
+    transition: background 0.1s;
+    animation: slideIn 0.2s ease both;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-6px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .order-table tbody tr:last-child { border-bottom: none; }
+  .order-table tbody tr:hover { background: var(--teal-light); }
+
+  .order-table td { padding: 0.65rem 1rem; }
+
+  .order-id { font-weight: 700; color: var(--teal); font-size: 0.9rem; }
+  .order-time { color: var(--text-dim); }
+
+  .badge {
+    display: inline-block;
+    padding: 0.2rem 0.65rem;
+    border-radius: 2px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .badge.printed { background: var(--green-bg);  color: var(--green); }
+  .badge.failed  { background: var(--red-bg);     color: var(--red); }
+  .badge.retry   { background: var(--amber-bg);   color: var(--amber); }
+
+
+  /* ── FOOTER ── */
+  .page-footer {
+    background: var(--teal);
+    color: rgba(255,255,255,0.7);
+    text-align: center;
+    padding: 0.8rem;
+    font-size: 0.7rem;
+    margin-top: 2rem;
+  }
+
+  .empty-state { padding: 2rem; text-align: center; color: var(--muted); font-size: 0.82rem; }
+</style>
+</head>
+<body>
+
+<div class="rainbow"></div>
+
+<div class="topnav">
+  <div style="display:flex;align-items:center;gap:1rem;">
+    <div class="nav-title">Order Automation Dashboard</div>
+  </div>
+  <div class="nav-right">
+    <button class="refresh-btn" id="refresh-btn" onclick="loadStatus()">
+      <span class="icon">↻</span> Refresh Now
+    </button>
+    <div style="margin: 20px 0;">
+    <button id="checkNowBtn" onclick="triggerManualCheck()" style="padding: 10px 20px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+        Check for New Orders Now
+    </button>
+    <span id="statusMsg" style="margin-left: 10px; color: #666;"></span>
+</div>
+
+<script>
+async function triggerManualCheck() {
+    const btn = document.getElementById('checkNowBtn');
+    const msg = document.getElementById('statusMsg');
+    
+    btn.disabled = true;
+    msg.innerText = "TRIGGERING CHECK...";
+
+    try {
+        // Points to the script inside the cgi-bin folder
+        await fetch('/cgi-bin/trigger_manual_check.py');
+        
+        msg.innerText = "SUCCESS! SIGNAL SENT.";
+        
+        setTimeout(() => { 
+            location.reload(); 
+        }, 3000);
+    } catch (err) {
+        msg.innerText = "ERROR RUNNING SCRIPT";
+        btn.disabled = false;
+    }
+}
+</script>
+  </div>
+</div>
+
+<div class="catbar">
+  <div class="catbar-label">Automation Status</div>
+  <div id="status-pill" class="status-pill idle">
+    <div class="pulse"></div>
+    <span id="status-text">Loading...</span>
+  </div>
+  <div style="margin-left:auto;font-size:0.68rem;color:rgba(255,255,255,0.6);">
+    Last checked: <span id="last-check-bar">—</span>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-box">
+      <div class="sidebar-title" style="padding:0.5rem 0.6rem;margin:0;">Quick Stats</div>
+      <div class="sidebar-item active">📋 Recent Orders</div>
+      <div class="sidebar-item">📅 Today: <strong id="sidebar-today">—</strong></div>
+      <div class="sidebar-item">💰 Sales Today: <strong id="sidebar-sales-today">—</strong></div>
+      <div class="sidebar-item">💰 Sales Yesterday: <strong id="sidebar-sales-yesterday">—</strong></div>
+      <div class="sidebar-item">💰 Sales This Month: <strong id="sidebar-sales-month">—</strong></div>
+      <div class="sidebar-item">📅 Yesterday: <strong id="sidebar-yesterday">—</strong></div>
+      <div class="sidebar-item">📅 Last 7 Days: <strong id="sidebar-week">—</strong></div>
+      <div class="sidebar-item">📦 All Time: <strong id="sidebar-total">—</strong></div>
+      <div class="sidebar-item">🚫 Fraud Skipped: <strong id="sidebar-fraud">—</strong></div>
+      <div class="sidebar-item">🎁 GC Skipped: <strong id="sidebar-gc">—</strong></div>
+    </div>
+
+    <div class="sidebar-box">
+      <div class="sidebar-title" style="padding:0.5rem 0.6rem;margin:0;">System</div>
+      <div class="sidebar-item">📄 system_log.txt</div>
+      <div class="sidebar-item">✅ success_log.txt</div>
+      <div class="sidebar-item">🔁 retry_queue.json</div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div style="flex:1;min-width:0;">
+
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-label">Today</div>
+        <div class="stat-value" id="orders-today">—</div>
+        <div class="stat-sub" id="orders-today-date">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Yesterday</div>
+        <div class="stat-value" id="orders-yesterday">—</div>
+        <div class="stat-sub" id="orders-yesterday-date">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Last 7 Days</div>
+        <div class="stat-value" id="orders-week">—</div>
+        <div class="stat-sub">rolling weekly total</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">All Time</div>
+        <div class="stat-value" id="orders-total">—</div>
+        <div class="stat-sub">total printed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Skipped — Fraud</div>
+        <div class="stat-value" id="skipped-fraud">—</div>
+        <div class="stat-sub">flagged & ignored</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Skipped — GC Only</div>
+        <div class="stat-value" id="skipped-gc">—</div>
+        <div class="stat-sub">gift cert only</div>
+      </div>
+    </div>
+
+
+
+    <div class="section-title">Recent Orders</div>
+    <table class="order-table">
+      <thead>
+        <tr>
+          <th>Order #</th>
+          <th>Time</th>
+          <th>Subtotal</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="order-list">
+        <tr><td colspan="3" class="empty-state">Loading order history...</td></tr>
+      </tbody>
+    </table>
+
+    <div style="font-size:0.68rem;color:var(--muted);text-align:right;">
+      Last checked: <span id="last-check">—</span>
+    </div>
+
+  </div>
+</div>
+
+<div class="page-footer">
+  PuzzleMaster Incorporated &nbsp;·&nbsp; Order Automation Dashboard &nbsp;·&nbsp; Internal Use Only
+</div>
+
+<script>
+  async function loadStatus() {
+    const btn = document.getElementById('refresh-btn');
+    btn.classList.add('spinning');
+    btn.disabled = true;
+
+    try {
+      const res = await fetch('status.json?' + Date.now());
+      if (!res.ok) throw new Error('not found');
+      const d = await res.json();
+
+      const daily = d.daily_counts || {};
+      const at = d.orders_total  ?? 0;
+      const sf = d.skipped_fraud ?? 0;
+      const sg = d.skipped_gc    ?? 0;
+      const lc = d.last_check    ?? 'never';
+
+      // Compute date keys
+      const todayKey     = new Date().toISOString().slice(0,10);
+      const yesterdayKey = new Date(Date.now() - 86400000).toISOString().slice(0,10);
+
+      const ot = daily[todayKey]     ?? 0;
+      const oy = daily[yesterdayKey] ?? 0;
+
+      // Daily sales subtotals
+      const dailySales = d.daily_sales || {};
+      const salesToday     = dailySales[todayKey]     ?? null;
+      const salesYesterday = dailySales[yesterdayKey] ?? null;
+
+      // Sales this calendar month
+      const thisMonth = todayKey.slice(0, 7); // "2026-03"
+      const salesMonth = Object.entries(dailySales)
+        .filter(([k]) => k.startsWith(thisMonth))
+        .reduce((sum, [, v]) => sum + v, 0);
+
+      // Last 7 days rolling total
+      let week = 0;
+      for (let i = 0; i < 7; i++) {
+        const k = new Date(Date.now() - i * 86400000).toISOString().slice(0,10);
+        week += daily[k] ?? 0;
+      }
+
+      // Format date labels nicely
+      const fmtDate = (key) => {
+        const [y,m,d] = key.split('-');
+        return `${parseInt(m)}/${parseInt(d)}/${y}`;
+      };
+
+      document.getElementById('orders-today').textContent      = ot;
+      document.getElementById('orders-today-date').textContent = fmtDate(todayKey);
+      document.getElementById('orders-yesterday').textContent      = oy;
+      document.getElementById('orders-yesterday-date').textContent = fmtDate(yesterdayKey);
+      document.getElementById('orders-week').textContent  = week;
+      document.getElementById('orders-total').textContent = at;
+      document.getElementById('skipped-fraud').textContent = sf;
+      document.getElementById('skipped-gc').textContent    = sg;
+      document.getElementById('last-check').textContent    = lc;
+      document.getElementById('last-check-bar').textContent = lc;
+      document.getElementById('sidebar-today').textContent       = ot;
+      document.getElementById('sidebar-sales-today').textContent     = salesToday     !== null ? "$" + salesToday.toFixed(2)     : "—";
+      document.getElementById('sidebar-sales-yesterday').textContent = salesYesterday !== null ? "$" + salesYesterday.toFixed(2) : "—";
+      document.getElementById('sidebar-sales-month').textContent    = salesMonth > 0 ? "$" + salesMonth.toFixed(2) : "—";
+      document.getElementById('sidebar-yesterday').textContent = oy;
+      document.getElementById('sidebar-week').textContent      = week;
+      document.getElementById('sidebar-total').textContent     = at;
+      document.getElementById('sidebar-fraud').textContent     = sf;
+      document.getElementById('sidebar-gc').textContent        = sg;
+
+      const pill = document.getElementById('status-pill');
+      const txt  = document.getElementById('status-text');
+      const minutesSince = d.last_check
+        ? (Date.now() - new Date(d.last_check).getTime()) / 60000
+        : Infinity;
+
+      if (minutesSince > 15) {
+        pill.className = 'status-pill idle';  txt.textContent = 'May be offline';
+      } else {
+        pill.className = 'status-pill ok';    txt.textContent = 'Running';
+      }
+
+      const tbody = document.getElementById('order-list');
+      const orders = d.recent_orders ?? [];
+      tbody.innerHTML = orders.length === 0
+        ? '<tr><td colspan="3" class="empty-state">No orders processed yet.</td></tr>'
+        : orders.map((o, i) => `
+            <tr style="animation-delay:${i*25}ms">
+              <td class="order-id"><a href="https://www.puzzlemaster.ca/admin/order.php?id=${o.id}" target="_blank" style="color:var(--teal);text-decoration:none;">#${o.id}</a></td>
+              <td class="order-time">${o.time}</td>
+              <td style="font-weight:600;color:#333;">${o.subtotal != null ? "$" + o.subtotal.toFixed(2) : "—"}</td>
+              <td><span class="badge ${o.status}">${o.status}</span></td>
+            </tr>`).join('');
+
+    } catch (err) {
+      document.getElementById('status-pill').className = 'status-pill idle';
+      document.getElementById('status-text').textContent = 'No data yet';
+      document.getElementById('order-list').innerHTML =
+        '<tr><td colspan="3" class="empty-state">status.json not found — automation may not have run yet.</td></tr>';
+    } finally {
+      btn.classList.remove('spinning');
+      btn.disabled = false;
+    }
+  }
+
+  loadStatus();
+</script>
+</body>
+</html>

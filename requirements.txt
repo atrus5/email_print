@@ -1,0 +1,6 @@
+python-dotenv
+beautifulsoup4
+playwright
+# Merges an order's product-image pages + packing slip + order page into ONE
+# print job. Without it the same documents print as separate jobs.
+PyMuPDF>=1.24
