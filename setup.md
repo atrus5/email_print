@@ -36,3 +36,17 @@ guaranteed 100% reroute, configure Order Printer Pro to
 Merging the two documents into one job needs **PyMuPDF** (`pip install -r
 requirements.txt`). Without it (or without PyMuPDF in a rebuilt .exe) the packing
 slip and order page still print, but as two separate jobs in the same order.
+
+## Quiet hours instead of a nightly shutdown
+
+Checks only run while the shop is open. `QUIET_DAYS` (default `Mon-Fri`) lists
+the days that print at all, and `QUIET_START` / `QUIET_END` (default `18:00` /
+`07:45`) bound the nightly pause, so orders are fetched Monday to Friday
+between 07:45 and 18:00 and not at all the rest of the time - including all of
+Saturday and Sunday. The panel and every automation Chrome session stay open
+throughout, so nothing has to be logged into again in the morning. A window may
+cross midnight, "Trigger now" still runs a manual check at any hour, and
+leaving `QUIET_START`/`QUIET_END` blank switches the feature off entirely. If a
+scheduled night-time stop (EmailPrint_Stop / `Stop_OrderPrintAuto.bat`) is still
+active, disable that task - otherwise it keeps closing everything down at the
+old time.

@@ -20,6 +20,7 @@ from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, field
 
 import cdp_connect
+import quiet_hours
 
 load_dotenv()
 
@@ -614,6 +615,7 @@ if __name__ == "__main__":
 
     TRIGGER_FILE = "etsy_trigger.txt"
     last_check_time = time.time() - CONFIG.check_interval  # Run immediately on first start
+    quiet_gate = quiet_hours.QuietGate(system_logger, "Etsy order checks")
 
     # One IMAP handler per shop (different email credentials)
     handlers: Dict[str, IMAPConnectionHandler] = {
@@ -630,6 +632,19 @@ if __name__ == "__main__":
         while not _shutdown_requested:
             current_time = time.time()
             triggered = os.path.exists(TRIGGER_FILE)
+
+            if not triggered and quiet_gate.should_pause():
+                # Quiet hours: fetch nothing overnight, but leave the panel,
+                # the browsers and the print setup alive so the morning
+                # needs no logins.
+                last_check_time = current_time
+                time.sleep(1)
+                continue
+            quiet_gate.note_manual_override(triggered)
+            if quiet_gate.take_resumed():
+                # First pass after the window closed: check now instead of
+                # waiting out another full CHECK_INTERVAL.
+                last_check_time = current_time - CONFIG.check_interval
 
             if triggered or (current_time - last_check_time >= CONFIG.check_interval):
                 if triggered:

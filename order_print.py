@@ -23,6 +23,7 @@ import uuid
 import logging.handlers
 
 import cdp_connect
+import quiet_hours
 
 load_dotenv()
 
@@ -784,6 +785,7 @@ if __name__ == "__main__":
     system_logger.info("=== PuzzleMaster Order Automation started ===")
     TRIGGER_FILE = "trigger.txt"
     last_check_time = time.time()
+    quiet_gate = quiet_hours.QuietGate(system_logger, "PuzzleMaster order checks")
 
     # Initialize IMAP connection handler
     handler = IMAPConnectionHandler(
@@ -801,6 +803,19 @@ if __name__ == "__main__":
                 system_logger.error(f"Housekeeping exception caught: {e}")
 
             current_time = time.time()
+            triggered = os.path.exists(TRIGGER_FILE)
+            if not triggered and quiet_gate.should_pause():
+                # Quiet hours: fetch nothing overnight, but leave the panel,
+                # the browsers and the print setup alive so the morning
+                # needs no logins.
+                last_check_time = current_time
+                time.sleep(1)
+                continue
+            quiet_gate.note_manual_override(triggered)
+            if quiet_gate.take_resumed():
+                # First pass after the window closed: check now instead of
+                # waiting out another full CHECK_INTERVAL.
+                last_check_time = current_time - CONFIG.check_interval
             if (current_time - last_check_time >= CONFIG.check_interval) or os.path.exists(TRIGGER_FILE):
                 if os.path.exists(TRIGGER_FILE):
                     try: 
